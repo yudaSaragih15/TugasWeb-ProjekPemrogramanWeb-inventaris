@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes; // <--- WAJIB ADA
 
 class Barang extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes; // <--- TAMBAHKAN SoftDeletes DI SINI
 
     protected $table = 'barang';
 
@@ -18,5 +19,9 @@ class Barang extends Model
         'lokasi',
         'jumlah',
         'kondisi',
+        'foto', // <--- TAMBAHKAN INI AGAR BISA DISIMPAN VIA MASS ASSIGNMENT
     ];
+
+    // Opsional: Format tanggal deleted_at agar rapi
+    protected $dates = ['deleted_at'];
 }

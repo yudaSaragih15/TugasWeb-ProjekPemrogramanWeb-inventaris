@@ -9,14 +9,15 @@ class RiwayatTransfer extends Model
 {
     use HasFactory;
 
-    protected $table = 'riwayat_transfer';
+    protected $table = 'riwayat_transfers';
 
     protected $fillable = [
         'barang_id',
         'lokasi_asal',
         'lokasi_tujuan',
-        'jumlah_ditransfer',
+        'jumlah',
         'keterangan',
+        'tanggal',
     ];
 
     public function barang()

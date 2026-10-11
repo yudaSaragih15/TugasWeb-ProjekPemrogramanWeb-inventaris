@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('riwayat_transfer', function (Blueprint $table) {
+        Schema::create('riwayat_transfers', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('barang_id')->constrained('barang')->onDelete('cascade');
+            $table->foreignId('barang_id')->nullable()->constrained('barang')->onDelete('cascade');
             $table->string('lokasi_asal');
             $table->string('lokasi_tujuan');
-            $table->integer('jumlah_transfer');
-            $table->date('tanggal_transfer');
+            $table->integer('jumlah');
             $table->text('keterangan')->nullable();
+            $table->timestamp('tanggal')->useCurrent();
             $table->timestamps();
         });
     }
@@ -28,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('riwayat_transfer');
+        Schema::dropIfExists('riwayat_transfers');
     }
 };
