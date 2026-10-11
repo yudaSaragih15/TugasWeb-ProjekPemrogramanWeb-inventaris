@@ -10,7 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Alpine.js CDN (Wajib di <head> agar directive x-data ter-parse sempurna) -->
+    <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
@@ -25,7 +25,7 @@
         }
 
         /* Sidebar Desktop */
-        .sidebar {
+        .sidebar-desktop {
             width: var(--sidebar-width);
             height: 100vh;
             position: fixed;
@@ -39,15 +39,14 @@
             flex-direction: column;
             justify-content: space-between;
         }
+        
         .main-content {
             margin-left: var(--sidebar-width);
             padding: 2rem;
-
-            min-width: 0;
-
             min-height: 100vh;
-
+            min-width: 0;
         }
+
         .nav-link {
             border-radius: 10px;
             padding: 0.75rem 1rem;
@@ -68,18 +67,6 @@
             color: var(--primary-color) !important;
         }
 
-        /* Penyesuaian Khusus Layar HP / Mobile (< 768px) */
-        @media (max-width: 767.98px) {
-            .sidebar {
-                display: none !important;
-            }
-            .main-content {
-                margin-left: 0 !important;
-                padding: 1rem !important;
-            }
-        }
-
-        /* Badge Styles */
         .card-custom {
             border: none;
             border-radius: 16px;
@@ -87,7 +74,6 @@
             background: #ffffff;
         }
         
-        /* Style khusus untuk tombol settings di sidebar */
         .btn-settings-icon {
             width: 36px;
             height: 36px;
@@ -106,11 +92,21 @@
             color: #212529;
             transform: rotate(90deg);
         }
+
+        /* Penyesuaian Khusus Layar HP / Mobile (< 768px) */
+        @media (max-width: 767.98px) {
+            .sidebar-desktop {
+                display: none !important;
+            }
+            .main-content {
+                margin-left: 0 !important;
+                padding: 1rem !important;
+            }
+        }
     </style>
 </head>
 <body>
 
- fitur-transfer-aset
     <!-- Topbar Mobile (Hanya Tampil di Layar HP < 768px) -->
     <div class="d-md-none bg-white border-bottom px-3 py-2.5 sticky-top d-flex align-items-center justify-content-between shadow-sm">
         <div class="d-flex align-items-center">
@@ -138,33 +134,43 @@
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                     <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
                 </a>
-                <a class="nav-link {{ request()->routeIs('barang.index') ? 'active' : '' }}" href="{{ route('barang.index') }}">
+                <a class="nav-link {{ request()->routeIs('barang.*') ? 'active' : '' }}" href="{{ route('barang.index') }}">
                     <i class="bi bi-box-seam-fill me-2"></i> Data Aset
                 </a>
-                <a class="nav-link {{ request()->routeIs('barang.riwayat_transfer') ? 'active' : '' }}" href="{{ route('barang.riwayat_transfer') }}">
+                <a class="nav-link {{ request()->routeIs('transfer.*') || request()->routeIs('barang.riwayat_transfer') ? 'active' : '' }}" href="{{ route('transfer.index') }}">
                     <i class="bi bi-arrow-left-right me-2"></i> Transfer & Riwayat
+                </a>
+                <a class="nav-link {{ request()->routeIs('master-data.*') ? 'active' : '' }}" href="{{ route('master-data.index') }}">
+                    <i class="bi bi-database-fill-gear me-2"></i> Master Data
+                </a>
+                <a class="nav-link {{ request()->routeIs('maintenance.*') ? 'active' : '' }}" href="{{ route('maintenance.index') }}">
+                    <i class="bi bi-tools me-2"></i> Pemeliharaan
+                </a>
+                <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
+                    <i class="bi bi-people-fill me-2"></i> Manajemen Pengguna
                 </a>
             </div>
             <div class="border-top pt-3">
-                <div class="d-flex align-items-center">
-                    <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-2">
-                        <i class="bi bi-person-fill text-secondary fs-5"></i>
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center overflow-hidden">
+                        <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="min-width: 36px; height: 36px;">
+                            <i class="bi bi-person-fill text-secondary fs-5"></i>
+                        </div>
+                        <div class="text-truncate">
+                            <h6 class="mb-0 fw-bold fs-7 text-truncate">Admin FMIPA</h6>
+                            <small class="text-muted fs-8 text-truncate d-block">FMIPA UNIMED</small>
+                        </div>
                     </div>
-                    <div>
-                        <h6 class="mb-0 fw-bold fs-7">Admin FMIPA</h6>
-                        <small class="text-muted fs-8">FMIPA UNIMED</small>
-                    </div>
+                    <a href="{{ route('settings.index') }}" class="btn-settings-icon ms-2" title="Pengaturan">
+                        <i class="bi bi-gear-fill"></i>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Sidebar Navigation Desktop (Hanya Tampil di Screen ≥ 768px) -->
-    <div class="sidebar d-none d-md-flex flex-column justify-content-between">
-
-    <!-- Sidebar Navigation -->
-    <div class="sidebar">
- main
+    <div class="sidebar-desktop d-none d-md-flex">
         <div>
             <!-- Logo Area -->
             <div class="d-flex align-items-center mb-4 px-2">
@@ -174,7 +180,7 @@
                 <h5 class="fw-bold text-dark mb-0">Inventaris<span class="text-primary">Kampus</span></h5>
             </div>
 
-            <!-- Menu Navigasi -->
+            <!-- Menu Navigasi Desktop -->
             <div class="nav flex-column">
                 <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                     <i class="bi bi-grid-1x2-fill me-2"></i> Dashboard
@@ -184,28 +190,26 @@
                     <i class="bi bi-box-seam-fill me-2"></i> Data Aset
                 </a>
                 
-                <a class="nav-link {{ request()->routeIs('barang.riwayat_transfer') ? 'active' : '' }}" href="{{ route('barang.riwayat_transfer') }}">
+                <a class="nav-link {{ request()->routeIs('transfer.*') || request()->routeIs('barang.riwayat_transfer') ? 'active' : '' }}" href="{{ route('transfer.index') }}">
                     <i class="bi bi-arrow-left-right me-2"></i> Transfer & Riwayat
                 </a>
 
-                <!-- MENU BARU: MASTER DATA -->
+                <!-- MENU BARU -->
                 <a class="nav-link {{ request()->routeIs('master-data.*') ? 'active' : '' }}" href="{{ route('master-data.index') }}">
                     <i class="bi bi-database-fill-gear me-2"></i> Master Data
                 </a>
 
-                <!-- MENU BARU: PEMELIHARAAN -->
                 <a class="nav-link {{ request()->routeIs('maintenance.*') ? 'active' : '' }}" href="{{ route('maintenance.index') }}">
                     <i class="bi bi-tools me-2"></i> Pemeliharaan
                 </a>
 
-                <!-- MENU BARU: MANAJEMEN PENGGUNA -->
                 <a class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}" href="{{ route('users.index') }}">
                     <i class="bi bi-people-fill me-2"></i> Manajemen Pengguna
                 </a>
             </div>
         </div>
 
-        <!-- User Profile & Settings Icon -->
+        <!-- User Profile & Settings Icon Desktop -->
         <div class="border-top pt-3 px-2 d-flex align-items-center justify-content-between">
             <div class="d-flex align-items-center overflow-hidden">
                 <div class="bg-secondary bg-opacity-10 rounded-circle p-2 me-2 d-flex align-items-center justify-content-center" style="min-width: 36px; height: 36px;">
