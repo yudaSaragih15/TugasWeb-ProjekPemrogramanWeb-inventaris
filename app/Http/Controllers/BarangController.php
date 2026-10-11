@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Storage;
 class BarangController extends Controller
 {
     /**
-     * Tampilan Ringkasan Dashboard (TIDAK DIUBAH AGAR AMAN)
+     * Tampilan Ringkasan Dashboard (AMAN - TIDAK DIUBAH)
      */
     public function dashboard()
     {
@@ -51,6 +51,17 @@ class BarangController extends Controller
         $kondisis = ['Baik', 'Rusak Ringan', 'Rusak Berat'];
 
         return view('barang.index', compact('barangs', 'kategoris', 'kondisis'));
+    }
+
+    /**
+     * BARU: Menampilkan Daftar Data Arsip (Soft Deleted)
+     */
+    public function trashed()
+    {
+        // onlyTrashed() hanya mengambil data yang sudah dihapus sementara
+        $barangs = Barang::onlyTrashed()->latest()->paginate(10);
+        
+        return view('barang.trashed', compact('barangs'));
     }
 
     /**
@@ -106,12 +117,11 @@ class BarangController extends Controller
             'lokasi'      => 'required',
             'jumlah'      => 'required|numeric|min:1',
             'kondisi'     => 'required',
-            'foto'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048', // Max 2MB
+            'foto'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
         $data = $request->except('foto');
 
-        // Proses Upload Foto jika ada
         if ($request->hasFile('foto')) {
             $path = $request->file('foto')->store('fotos-barang', 'public');
             $data['foto'] = $path;
@@ -147,7 +157,6 @@ class BarangController extends Controller
 
         $data = $request->except('foto');
 
-        // Jika user upload foto baru, hapus yang lama dan simpan yang baru
         if ($request->hasFile('foto')) {
             if ($barang->foto && Storage::disk('public')->exists($barang->foto)) {
                 Storage::disk('public')->delete($barang->foto);
@@ -167,7 +176,7 @@ class BarangController extends Controller
     public function destroy($id)
     {
         $barang = Barang::findOrFail($id);
-        $barang->delete(); // Karena model pakai SoftDeletes, ini hanya set deleted_at
+        $barang->delete(); 
 
         return redirect()->route('barang.index')->with('success', 'Aset dipindahkan ke arsip.');
     }
@@ -179,7 +188,7 @@ class BarangController extends Controller
     {
         $barang = Barang::withTrashed()->findOrFail($id);
         $barang->restore();
-        return redirect()->route('barang.index')->with('success', 'Aset berhasil dikembalikan dari arsip.');
+        return redirect()->route('barang.trashed')->with('success', 'Aset berhasil dikembalikan dari arsip.');
     }
 
     /**
