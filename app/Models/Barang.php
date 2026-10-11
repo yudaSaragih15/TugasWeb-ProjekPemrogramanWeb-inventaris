@@ -4,24 +4,47 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // <--- WAJIB ADA
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Barang extends Model
 {
-    use HasFactory, SoftDeletes; // <--- TAMBAHKAN SoftDeletes DI SINI
+    use HasFactory, SoftDeletes;
 
+    /**
+     * Nama tabel di database MySQL.
+     * Sesuai migration Yuda: Schema::create('barang', ...)
+     */
     protected $table = 'barang';
 
+    /**
+     * Kolom yang dapat diisi secara mass-assignment.
+     */
     protected $fillable = [
         'kode_barang',
         'nama_barang',
         'kategori',
-        'lokasi',
         'jumlah',
         'kondisi',
-        'foto', // <--- TAMBAHKAN INI AGAR BISA DISIMPAN VIA MASS ASSIGNMENT
+        'lokasi',
+        'foto',
     ];
 
-    // Opsional: Format tanggal deleted_at agar rapi
-    protected $dates = ['deleted_at'];
+    /**
+     * Type casting atribut.
+     */
+    protected $casts = [
+        'jumlah' => 'integer',
+        'deleted_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /**
+     * Relasi One-to-Many ke RiwayatTransfer.
+     */
+    public function riwayatTransfers(): HasMany
+    {
+        return $this->hasMany(RiwayatTransfer::class, 'barang_id')->latest('id');
+    }
 }
