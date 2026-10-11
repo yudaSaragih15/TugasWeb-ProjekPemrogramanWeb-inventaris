@@ -1,38 +1,28 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\TransferController;
+use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
-// Redirect '/' langsung ke dashboard
+// Redirect halaman utama langsung ke halaman Transfer milikmu untuk pengujian
 Route::get('/', function () {
-    return redirect()->route('dashboard');
+    return redirect()->route('transfer.index');
 });
 
-// Route khusus Dashboard
-Route::get('/dashboard', [BarangController::class, 'dashboard'])->name('dashboard');
+// Modul Transfer & Riwayat Aset (Dikeluarkan sementara dari middleware auth)
+Route::get('/transfer', [TransferController::class, 'index'])->name('transfer.index');
+Route::post('/transfer', [TransferController::class, 'store'])->name('transfer.store');
+Route::get('/transfer-aset', [TransferController::class, 'index'])->name('barang.riwayat_transfer');
 
-// Route khusus Transfer & Riwayat
-Route::get('/transfer-aset', [BarangController::class, 'riwayatTransfer'])->name('barang.riwayat_transfer');
+// Rute lain milik Yuda
+Route::middleware(['auth'])->group(function () {
+    Route::get('/dashboard', [BarangController::class, 'dashboard'])->name('dashboard');
+    Route::get('/barang/export-excel', [BarangController::class, 'exportExcel'])->name('barang.export.excel');
+    Route::post('/barang/{id}/restore', [BarangController::class, 'restore'])->name('barang.restore');
+    Route::resource('barang', BarangController::class);
+});
 
-// ============================================================
-// PENTING: Route Custom HARUS di atas Route::resource
-// Agar tidak tertangkap oleh parameter {barang} milik resource
-// ============================================================
-
-// Route Export Excel (Custom)
-Route::get('/barang/export-excel', [BarangController::class, 'exportExcel'])
-    ->name('barang.export.excel');
-
-// Route Restore Soft Delete (Custom)
-Route::post('/barang/{id}/restore', [BarangController::class, 'restore'])
-    ->name('barang.restore');
-
-// Route CRUD Data Aset Barang (Resource Standard)
-// Ini akan menangani: index, create, store, show, edit, update, destroy
-Route::resource('barang', BarangController::class);
+// Dummy route login
+Route::get('/login', function () {
+    return "Sistem Autentikasi / Login sedang dalam tahap pengembangan.";
+})->name('login');
