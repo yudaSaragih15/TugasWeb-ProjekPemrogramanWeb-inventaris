@@ -10,37 +10,50 @@ use App\Http\Controllers\UserManagementController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes - VERSI DEVELOPMENT (TANPA AUTH AGAR BISA CEK TAMPILAN)
+| Web Routes - Development Mode
 |--------------------------------------------------------------------------
 */
 
-// 1. UBAH REDIRECT HOME: Sekarang langsung ke Data Aset (Punya Kamu)
+// Redirect Home ke Data Aset
 Route::get('/', function () {
     return redirect()->route('barang.index'); 
 });
 
-// 2. ROUTE TRANSFER (Punya Teman - Tetap Jalan)
+// Route Transfer (Punya Teman)
 Route::get('/transfer', [TransferController::class, 'index'])->name('transfer.index');
 Route::post('/transfer', [TransferController::class, 'store'])->name('transfer.store');
 Route::get('/transfer-aset', [TransferController::class, 'index'])->name('barang.riwayat_transfer');
 
-// 3. ROUTE DASHBOARD & DATA ASET (Punya Kamu - TANPA AUTH SEMENTARA)
+// Route Dashboard & Data Aset
 Route::get('/dashboard', [BarangController::class, 'dashboard'])->name('dashboard');
-
 Route::get('/barang/export-excel', [BarangController::class, 'exportExcel'])->name('barang.export.excel');
 Route::get('/barang/trashed', [BarangController::class, 'trashed'])->name('barang.trashed');
 Route::post('/barang/{id}/restore', [BarangController::class, 'restore'])->name('barang.restore');
 Route::resource('barang', BarangController::class);
 
-// 4. ROUTE MENU BARU (Punya Kamu - TANPA AUTH SEMENTARA)
+// Route Master Data
+Route::prefix('master-data')->name('master-data.')->group(function () {
+    Route::get('/', [MasterDataController::class, 'index'])->name('index');
+    Route::post('/lokasi', [MasterDataController::class, 'storeLokasi'])->name('lokasi.store');
+    Route::delete('/lokasi/{id}', [MasterDataController::class, 'destroyLokasi'])->name('lokasi.destroy');
+    Route::post('/kategori', [MasterDataController::class, 'storeKategori'])->name('kategori.store');
+    Route::delete('/kategori/{id}', [MasterDataController::class, 'destroyKategori'])->name('kategori.destroy');
+});
+
+// Route Maintenance / Pemeliharaan (BARU)
+Route::prefix('maintenance')->name('maintenance.')->group(function () {
+    Route::get('/', [MaintenanceController::class, 'index'])->name('index');
+    Route::post('/', [MaintenanceController::class, 'store'])->name('store');
+    Route::patch('/{id}/status', [MaintenanceController::class, 'updateStatus'])->name('update-status');
+    Route::delete('/{id}', [MaintenanceController::class, 'destroy'])->name('destroy');
+});
+
+// Route Settings & Users
 Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
 Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
-
-Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
-Route::get('/maintenance', [MaintenanceController::class, 'index'])->name('maintenance.index');
 Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
 
-// 5. DUMMY LOGIN (Biarkan saja, tidak mengganggu karena kita bypass auth)
+// Dummy Login
 Route::get('/login', function () {
     return "Sistem Autentikasi / Login sedang dalam tahap pengembangan.";
 })->name('login');
