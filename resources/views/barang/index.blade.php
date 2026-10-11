@@ -6,14 +6,26 @@
         <h3 class="fw-bold mb-1">Daftar Inventaris Aset</h3>
         <p class="text-muted mb-0">Kelola dan pantau seluruh aset kampus yang terdaftar.</p>
     </div>
-    <div class="d-flex gap-2">
-        <!-- FITUR 2: TOMBOL EXPORT -->
-        <a href="{{ route('barang.export.excel') }}" class="btn btn-success px-3 py-2 rounded-3 fw-bold">
-            <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
-        </a>
-        <a href="{{ route('barang.create') }}" class="btn btn-primary px-3 py-2 rounded-3 fw-bold">
-            <i class="bi bi-plus-lg me-1"></i> Tambah Aset
-        </a>
+    
+    <!-- FITUR DROPDOWN MENU (Pengganti Tombol Biasa) -->
+    <div class="dropdown">
+        <button class="btn btn-dark dropdown-toggle px-4 py-2 rounded-3 fw-bold d-flex align-items-center gap-2" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="bi bi-list-ul"></i> Menu Aksi
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0" aria-labelledby="dropdownMenuButton">
+            <li>
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('barang.create') }}">
+                    <i class="bi bi-plus-circle-fill text-primary"></i> Tambah Aset Baru
+                </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+                <a class="dropdown-item d-flex align-items-center gap-2 py-2" href="{{ route('barang.export.excel') }}">
+                    <i class="bi bi-file-earmark-excel-fill text-success"></i> Export ke Excel
+                </a>
+            </li>
+            <!-- Bisa ditambah menu lain nanti, misal: Export PDF -->
+        </ul>
     </div>
 </div>
 
@@ -21,11 +33,14 @@
 <div class="card card-custom p-3 mb-4 border-0 shadow-sm">
     <form action="{{ route('barang.index') }}" method="GET" class="row g-3 align-items-end">
         <div class="col-md-4">
-            <label class="form-label fw-semibold small">Cari Aset</label>
-            <input type="text" name="search" class="form-control" placeholder="Nama atau Kode Barang..." value="{{ request('search') }}">
+            <label class="form-label fw-semibold small text-uppercase text-muted">Cari Aset</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Nama atau Kode Barang..." value="{{ request('search') }}">
+            </div>
         </div>
         <div class="col-md-3">
-            <label class="form-label fw-semibold small">Filter Kategori</label>
+            <label class="form-label fw-semibold small text-uppercase text-muted">Filter Kategori</label>
             <select name="kategori" class="form-select">
                 <option value="">Semua Kategori</option>
                 @foreach($kategoris as $kat)
@@ -34,7 +49,7 @@
             </select>
         </div>
         <div class="col-md-3">
-            <label class="form-label fw-semibold small">Filter Kondisi</label>
+            <label class="form-label fw-semibold small text-uppercase text-muted">Filter Kondisi</label>
             <select name="kondisi" class="form-select">
                 <option value="">Semua Kondisi</option>
                 @foreach($kondisis as $kon)
@@ -43,84 +58,112 @@
             </select>
         </div>
         <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-dark w-100"><i class="bi bi-search"></i> Filter</button>
-            <a href="{{ route('barang.index') }}" class="btn btn-outline-secondary"><i class="bi bi-arrow-counterclockwise"></i></a>
+            <button type="submit" class="btn btn-dark w-100"><i class="bi bi-funnel"></i> Filter</button>
+            <a href="{{ route('barang.index') }}" class="btn btn-outline-secondary" title="Reset Filter"><i class="bi bi-arrow-counterclockwise"></i></a>
         </div>
     </form>
 </div>
 
-<div class="card card-custom p-4">
+<div class="card card-custom p-0 border-0 shadow-sm overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
-            <thead class="table-light">
+            <thead class="bg-light">
                 <tr>
-                    <th>No</th>
-                    <th>Foto</th> <!-- KOLOM FOTO -->
+                    <th class="ps-4" style="width: 50px;">No</th>
+                    <th style="width: 80px;">Foto</th>
                     <th>Kode Barang</th>
                     <th>Nama Barang</th>
                     <th>Kategori</th>
                     <th>Lokasi</th>
                     <th>Jumlah</th>
                     <th>Kondisi</th>
-                    <th>Aksi</th>
+                    <th class="text-end pe-4">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($barangs as $index => $barang)
                 <tr>
-                    <td>{{ $barangs->firstItem() + $index }}</td>
+                    <td class="ps-4 text-muted">{{ $barangs->firstItem() + $index }}</td>
                     
-                    <!-- FITUR 5: TAMPILAN FOTO -->
+                    <!-- FITUR PREVIEW FOTO (MODAL) -->
                     <td>
                         @if($barang->foto)
-                            <img src="{{ asset('storage/' . $barang->foto) }}" alt="Foto" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">
+                            <!-- Gambar Kecil yang bisa diklik -->
+                            <img src="{{ asset('storage/' . $barang->foto) }}" 
+                                 alt="Preview" 
+                                 class="rounded shadow-sm" 
+                                 style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
+                                 data-bs-toggle="modal" 
+                                 data-bs-target="#fotoModal{{ $barang->id }}">
                         @else
-                            <div style="width: 50px; height: 50px; background: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-                                <i class="bi bi-image text-muted"></i>
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 50px; height: 50px;">
+                                <i class="bi bi-image fs-5"></i>
                             </div>
                         @endif
                     </td>
 
-                    <td class="fw-semibold">{{ $barang->kode_barang }}</td>
+                    <td class="fw-bold text-dark">{{ $barang->kode_barang }}</td>
                     <td class="fw-semibold text-primary">{{ $barang->nama_barang }}</td>
-                    <td><span class="badge bg-secondary bg-opacity-10 text-dark border">{{ $barang->kategori }}</span></td>
-                    <td><span class="badge bg-info bg-opacity-10 text-info border border-info">{{ $barang->lokasi }}</span></td>
+                    <td><span class="badge bg-secondary bg-opacity-10 text-dark border border-secondary rounded-pill px-3">{{ $barang->kategori }}</span></td>
+                    <td><span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-3"><i class="bi bi-geo-alt me-1"></i>{{ $barang->lokasi }}</span></td>
                     
-                    <!-- FITUR 4: INDIKATOR STOK RENDAH -->
+                    <!-- INDIKATOR STOK RENDAH -->
                     <td>
-                        <span class="fw-bold {{ $barang->jumlah < 5 ? 'text-danger' : '' }}">
+                        <span class="fw-bold {{ $barang->jumlah < 5 ? 'text-danger' : 'text-dark' }}">
                             {{ $barang->jumlah }} Unit
                         </span>
                         @if($barang->jumlah < 5)
-                            <i class="bi bi-exclamation-triangle-fill text-danger ms-1" title="Stok Menipis!"></i>
+                            <i class="bi bi-exclamation-triangle-fill text-warning ms-1" title="Stok Menipis!"></i>
                         @endif
                     </td>
 
                     <td>
                         @if($barang->kondisi == 'Baik')
-                            <span class="badge bg-success">Baik</span>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3">Baik</span>
                         @elseif($barang->kondisi == 'Rusak Ringan')
-                            <span class="badge bg-warning text-dark">Rusak Ringan</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-3">Rusak Ringan</span>
                         @else
-                            <span class="badge bg-danger">Rusak Berat</span>
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger rounded-pill px-3">Rusak Berat</span>
                         @endif
                     </td>
-                    <td>
-                        <a href="{{ route('barang.edit', $barang->id) }}" class="btn btn-sm btn-outline-warning me-1">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <form action="{{ route('barang.destroy', $barang->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin memindahkan aset ini ke arsip?')">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </form>
+                    <td class="text-end pe-4">
+                        <div class="btn-group">
+                            <a href="{{ route('barang.edit', $barang->id) }}" class="btn btn-sm btn-outline-warning" title="Edit">
+                                <i class="bi bi-pencil-square"></i>
+                            </a>
+                            <form action="{{ route('barang.destroy', $barang->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin ingin memindahkan aset ini ke arsip?')">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-outline-danger" title="Hapus (Arsip)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
+
+                <!-- MODAL PREVIEW FOTO (Dibuat dinamis per baris) -->
+                @if($barang->foto)
+                <div class="modal fade" id="fotoModal{{ $barang->id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content border-0">
+                            <div class="modal-header border-0 pb-0">
+                                <h5 class="modal-title fw-bold">Detail Foto: {{ $barang->nama_barang }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center p-4 bg-light">
+                                <img src="{{ asset('storage/' . $barang->foto) }}" class="img-fluid rounded shadow" style="max-height: 70vh;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 @empty
                 <tr>
                     <td colspan="9" class="text-center py-5 text-muted">
-                        <i class="bi bi-box-seam fs-1 d-block mb-2"></i>
-                        Tidak ada data yang sesuai dengan filter.
+                        <i class="bi bi-inbox fs-1 d-block mb-3 opacity-50"></i>
+                        <p class="mb-0">Tidak ada data aset yang ditemukan.</p>
                     </td>
                 </tr>
                 @endforelse
@@ -128,13 +171,20 @@
         </table>
     </div>
 
-    <div class="mt-4 d-flex justify-content-between align-items-center">
-        {{ $barangs->links() }}
-        
-        <!-- LINK KE HALAMAN ARSIP (SOFT DELETE) -->
-        <a href="#" class="btn btn-sm btn-outline-dark">
-            <i class="bi bi-archive"></i> Lihat Data Arsip
-        </a>
+    <div class="p-3 border-top bg-white d-flex justify-content-between align-items-center">
+        <div class="text-muted small">
+            Menampilkan {{ $barangs->firstItem() ?? 0 }} - {{ $barangs->lastItem() ?? 0 }} dari {{ $barangs->total() }} data
+        </div>
+        <div>
+            {{ $barangs->links() }}
+        </div>
     </div>
+</div>
+
+<!-- TOMBOL LIHAT ARSIP (Soft Delete) -->
+<div class="mt-4 text-end">
+    <a href="{{ route('barang.trashed') }}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+        <i class="bi bi-archive me-1"></i> Lihat Data Arsip
+    </a>
 </div>
 @endsection
