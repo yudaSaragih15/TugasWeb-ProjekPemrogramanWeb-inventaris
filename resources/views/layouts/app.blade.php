@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +12,8 @@
 
     <!-- Alpine.js CDN -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         :root {
@@ -103,7 +105,149 @@
                 padding: 1rem !important;
             }
         }
+
+        /* ==========================================
+           DARK MODE - HITAM DOFF (MATTE BLACK)
+           ========================================== */
+        
+        [data-bs-theme="dark"] body {
+            background-color: #121212 !important; 
+            color: #e0e0e0 !important;
+        }
+
+        [data-bs-theme="dark"] .sidebar-desktop,
+        [data-bs-theme="dark"] .offcanvas,
+        [data-bs-theme="dark"] .d-md-none {
+            background-color: #1a1a24 !important; 
+            border-color: #2b2b3c !important;
+        }
+
+        /* Paksa semua card, kontainer putih, dan elemen background putih menjadi hitam doff */
+        [data-bs-theme="dark"] .bg-white,
+        [data-bs-theme="dark"] .card,
+        [data-bs-theme="dark"] .card-custom,
+        [data-bs-theme="dark"] .bg-light {
+            background-color: #1e1e2d !important;
+            border-color: #2b2b3c !important;
+            color: #e0e0e0 !important;
+        }
+
+        /* Memperbaiki semua warna teks utama agar terang */
+        [data-bs-theme="dark"] .text-dark,
+        [data-bs-theme="dark"] .text-muted,
+        [data-bs-theme="dark"] p,
+        [data-bs-theme="dark"] span,
+        [data-bs-theme="dark"] h1, [data-bs-theme="dark"] h2, 
+        [data-bs-theme="dark"] h3, [data-bs-theme="dark"] h4, 
+        [data-bs-theme="dark"] h5, [data-bs-theme="dark"] h6 {
+            color: #e0e0e0 !important;
+        }
+
+        /* Memperbaiki Form Input & Select */
+        [data-bs-theme="dark"] .form-control,
+        [data-bs-theme="dark"] .form-select,
+        [data-bs-theme="dark"] textarea {
+            background-color: #121212 !important;
+            border-color: #34344a !important;
+            color: #ffffff !important;
+        }
+        [data-bs-theme="dark"] .form-control::placeholder {
+            color: #8b8b9f !important;
+        }
+
+        /* Memperbaiki Tabel & Header Tabel yang sering belang putih */
+        [data-bs-theme="dark"] .table {
+            color: #e0e0e0 !important;
+            border-color: #34344a !important;
+        }
+        [data-bs-theme="dark"] .table>:not(caption)>*>* {
+            background-color: transparent !important;
+            color: #e0e0e0 !important;
+            border-color: #34344a !important;
+        }
+        [data-bs-theme="dark"] .table thead,
+        [data-bs-theme="dark"] .table th {
+            background-color: #171722 !important;
+            color: #ffffff !important;
+            border-color: #34344a !important;
+        }
+
+        /* Navigasi & Sidebar Link Hover dalam Dark Mode */
+        [data-bs-theme="dark"] .nav-link {
+            color: #9e9ea7;
+        }
+        [data-bs-theme="dark"] .nav-link:hover {
+            background-color: #2b2b3c;
+            color: #0d6efd;
+        }
+        [data-bs-theme="dark"] .nav-link.active {
+            background-color: rgba(13, 110, 253, 0.15); 
+        }
+
+        /* Tombol Pengaturan */
+        [data-bs-theme="dark"] .btn-settings-icon {
+            background-color: #2b2b3c;
+            color: #9e9ea7;
+        }
+        [data-bs-theme="dark"] .btn-settings-icon:hover {
+            color: #ffffff;
+        }
+
+        /* ==========================================
+           TAMBAHAN SPESIFIK UNTUK KOTAK TAB MASTER DATA
+           ========================================== */
+        [data-bs-theme="dark"] ul.nav.nav-pills,
+        [data-bs-theme="dark"] div.bg-white,
+        [data-bs-theme="dark"] .rounded-pill {
+            background-color: #1e1e2d !important;
+            border-color: #2b2b3c !important;
+        }
+
+        [data-bs-theme="dark"] .nav-pills .nav-link {
+            color: #b0b0c0 !important;
+            background-color: transparent !important;
+        }
+
+        [data-bs-theme="dark"] .nav-pills .nav-link.active {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+        
+        /* Paksa kotak navigasi tab master data berubah total di dark mode */
+        [data-bs-theme="dark"] .main-content .nav-pills.bg-white {
+            background-color: #1e1e2d !important;
+            border: 1px solid #2b2b3c !important;
+        }
+
+        /* Paksa teks tab biasa menjadi terang */
+        [data-bs-theme="dark"] .main-content .nav-pills .nav-link {
+            color: #d0d0d0 !important;
+            background-color: transparent !important;
+        }
+
+        /* Paksa teks tab yang sedang aktif (warna biru) menjadi putih bersih */
+        [data-bs-theme="dark"] .main-content .nav-pills .nav-link.active {
+            color: #ffffff !important;
+            background-color: #0d6efd !important;
+        }
+        
     </style>
+
+    <!-- Script Dark Mode Initialization -->
+    <script>
+        const getPreferredTheme = () => {
+            return localStorage.getItem('theme') || 'light';
+        }
+        const setTheme = function (theme) {
+            if (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', theme);
+            }
+        }
+        setTheme(getPreferredTheme());
+    </script>
+
 </head>
 <body>
 
@@ -161,9 +305,14 @@
                             <small class="text-muted fs-8 text-truncate d-block">FMIPA UNIMED</small>
                         </div>
                     </div>
-                    <a href="{{ route('settings.index') }}" class="btn-settings-icon ms-2" title="Pengaturan">
-                        <i class="bi bi-gear-fill"></i>
-                    </a>
+                    <div class="d-flex">
+                        <button type="button" class="btn-settings-icon ms-1 theme-toggle" title="Ganti Tema">
+                            <i class="bi bi-moon-fill theme-icon"></i>
+                        </button>
+                        <a href="{{ route('settings.index') }}" class="btn-settings-icon ms-1" title="Pengaturan">
+                            <i class="bi bi-gear-fill"></i>
+                        </a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -221,10 +370,14 @@
                 </div>
             </div>
             
-            <!-- Tombol Settings Gear -->
-            <a href="{{ route('settings.index') }}" class="btn-settings-icon ms-2" title="Pengaturan Aplikasi">
-                <i class="bi bi-gear-fill"></i>
-            </a>
+            <div class="d-flex">
+                <button type="button" class="btn-settings-icon ms-1 theme-toggle" title="Ganti Tema">
+                    <i class="bi bi-moon-fill theme-icon"></i>
+                </button>
+                <a href="{{ route('settings.index') }}" class="btn-settings-icon ms-1" title="Pengaturan Aplikasi">
+                    <i class="bi bi-gear-fill"></i>
+                </a>
+            </div>
         </div>
     </div>
 
@@ -248,6 +401,40 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Script Toggle Tombol Tema -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleBtns = document.querySelectorAll('.theme-toggle');
+            
+            const updateIcon = (theme) => {
+                const icons = document.querySelectorAll('.theme-icon');
+                icons.forEach(icon => {
+                    if(theme === 'dark') {
+                        icon.classList.remove('bi-moon-fill');
+                        icon.classList.add('bi-sun-fill');
+                    } else {
+                        icon.classList.remove('bi-sun-fill');
+                        icon.classList.add('bi-moon-fill');
+                    }
+                });
+            }
+
+            // Set ikon pertama kali
+            updateIcon(getPreferredTheme());
+
+            // Saat tombol diklik
+            toggleBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    let currentTheme = document.documentElement.getAttribute('data-bs-theme');
+                    let newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                    
+                    localStorage.setItem('theme', newTheme);
+                    document.documentElement.setAttribute('data-bs-theme', newTheme);
+                    updateIcon(newTheme);
+                });
+            });
+        });
+    </script>
     @yield('scripts')
 </body>
 </html>
