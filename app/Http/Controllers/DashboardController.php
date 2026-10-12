@@ -7,23 +7,36 @@ use App\Models\RiwayatTransfer;
 
 class DashboardController extends Controller
 {
-    public function index()
+   public function index()
     {
-        $total_aset = Barang::sum('jumlah');
-        $total_jenis = Barang::count();
-        $kondisi_baik = Barang::where('kondisi', 'Baik')->sum('jumlah');
-        $kondisi_rusak = Barang::where('kondisi', '!=', 'Baik')->sum('jumlah');
+        // Statistik utama
+        $totalBarang = Barang::count();
+        $totalJumlah = Barang::sum('jumlah');
         
-        $barang_terbaru = Barang::latest()->take(5)->get();
+        $barangTerbaru = Barang::latest()->take(5)->get();
         $riwayat_terbaru = RiwayatTransfer::with('barang')->latest()->take(5)->get();
 
+        // Data Grafik Berdasarkan Kondisi
+        $kondisiBaik = Barang::where('kondisi', 'LIKE', '%baik%')
+                             ->orWhere('kondisi', 'LIKE', '%Baik%')
+                             ->sum('jumlah');
+                             
+        $kondisiRingan = Barang::where('kondisi', 'LIKE', '%rusak ringan%')
+                               ->orWhere('kondisi', 'LIKE', '%Rusak Ringan%')
+                               ->sum('jumlah');
+                               
+        $kondisiBerat = Barang::where('kondisi', 'LIKE', '%rusak berat%')
+                              ->orWhere('kondisi', 'LIKE', '%Rusak Berat%')
+                              ->sum('jumlah');
+
         return view('dashboard', compact(
-            'total_aset', 
-            'total_jenis',
-            'kondisi_baik', 
-            'kondisi_rusak', 
-            'barang_terbaru',
-            'riwayat_terbaru'
+            'totalBarang', 
+            'totalJumlah',
+            'barangTerbaru',
+            'riwayat_terbaru',
+            'kondisiBaik',
+            'kondisiRingan',
+            'kondisiBerat'
         ));
     }
 }

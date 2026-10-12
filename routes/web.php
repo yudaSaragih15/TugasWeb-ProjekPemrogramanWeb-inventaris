@@ -7,6 +7,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\MasterDataController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +26,7 @@ Route::post('/transfer', [TransferController::class, 'store'])->name('transfer.s
 Route::get('/transfer-aset', [TransferController::class, 'index'])->name('barang.riwayat_transfer');
 
 // Route Dashboard & Data Aset
-Route::get('/dashboard', [BarangController::class, 'dashboard'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 Route::get('/barang/export-excel', [BarangController::class, 'exportExcel'])->name('barang.export.excel');
 Route::get('/barang/trashed', [BarangController::class, 'trashed'])->name('barang.trashed');
 Route::post('/barang/{id}/restore', [BarangController::class, 'restore'])->name('barang.restore');
