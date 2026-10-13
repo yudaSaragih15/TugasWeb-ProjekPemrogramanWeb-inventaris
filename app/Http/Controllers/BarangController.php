@@ -3,29 +3,26 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
+use App\Models\Lokasi;
+use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Schema;
 
 class BarangController extends Controller
 {
     /**
-     * Tampilan Ringkasan Dashboard (AMAN - TIDAK DIUBAH)
-     */
-    public function dashboard()
-    {
-        $totalBarang = Barang::count();
-        $totalJumlah = Barang::sum('jumlah') ?? 0;
-        $barangTerbaru = Barang::latest()->take(5)->get();
-
-        return view('dashboard', compact('totalBarang', 'totalJumlah', 'barangTerbaru'));
-    }
-
-    /**
-     * FITUR 1: PENCARIAN & FILTER LANJUTAN + INDEX
+     * Menampilkan daftar aset (Data Aset)
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
         $query = Barang::query();
+
+        // Filter Fakultas (Safe Check: hanya filter jika kolom ada)
+        if (Schema::hasColumn('barang', 'fakultas')) {
+            $query->where('fakultas', $user->fakultas);
+        }
 
         // Logika Pencarian
         if ($request->filled('search')) {
@@ -37,165 +34,166 @@ class BarangController extends Controller
         }
 
         // Logika Filter Dropdown
-        if ($request->filled('kondisi')) {
-            $query->where('kondisi', $request->kondisi);
-        }
-        if ($request->filled('kategori')) {
-            $query->where('kategori', $request->kategori);
-        }
+        if ($request->filled('kondisi')) $query->where('kondisi', $request->kondisi);
+        if ($request->filled('kategori')) $query->where('kategori', $request->kategori);
 
         $barangs = $query->latest()->paginate(10)->withQueryString();
         
-        // Mengambil data unik untuk opsi dropdown filter
-        $kategoris = Barang::distinct()->pluck('kategori');
+        // Ambil data unik untuk opsi filter
+        $filterQuery = Barang::query();
+        if (Schema::hasColumn('barang', 'fakultas')) $filterQuery->where('fakultas', $user->fakultas);
+        $kategoris = $filterQuery->distinct()->pluck('kategori');
         $kondisis = ['Baik', 'Rusak Ringan', 'Rusak Berat'];
 
         return view('barang.index', compact('barangs', 'kategoris', 'kondisis'));
     }
 
     /**
-     * BARU: Menampilkan Daftar Data Arsip (Soft Deleted)
+     * Menampilkan form tambah barang
      */
-    public function trashed()
-    {
-        // onlyTrashed() hanya mengambil data yang sudah dihapus sementara
-        $barangs = Barang::onlyTrashed()->latest()->paginate(10);
-        
-        return view('barang.trashed', compact('barangs'));
-    }
-
-    /**
-     * FITUR 2: EKSPOR DATA KE EXCEL (CSV)
-     */
-    public function exportExcel()
-    {
-        $filename = "data-aset-inventaris-" . date('Y-m-d-His') . ".csv";
-        $headers = [
-            "Content-type" => "text/csv",
-            "Content-Disposition" => "attachment; filename=$filename",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
-
-        $columns = ['Kode Barang', 'Nama Barang', 'Kategori', 'Lokasi', 'Jumlah', 'Kondisi'];
-        
-        $callback = function() use ($columns) {
-            $file = fopen('php://output', 'w');
-            fputcsv($file, $columns);
-            
-            foreach (Barang::all() as $barang) {
-                fputcsv($file, [
-                    $barang->kode_barang,
-                    $barang->nama_barang,
-                    $barang->kategori,
-                    $barang->lokasi,
-                    $barang->jumlah,
-                    $barang->kondisi
-                ]);
-            }
-            fclose($file);
-        };
-
-        return response()->stream($callback, 200, $headers);
-    }
-
     public function create()
     {
-        return view('barang.create');
+        $lokasis = Lokasi::orderBy('nama_lokasi')->get();
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        return view('barang.create', compact('lokasis', 'kategoris'));
     }
 
     /**
-     * SIMPAN BARANG BARU + UPLOAD FOTO
+     * Menyimpan barang baru + UPLOAD FOTO OTOMATIS
      */
     public function store(Request $request)
     {
         $request->validate([
             'kode_barang' => 'required|unique:barang,kode_barang',
-            'nama_barang' => 'required',
-            'kategori'    => 'required',
+            'nama_barang' => 'required', 
+            'kategori'    => 'required', 
             'lokasi'      => 'required',
-            'jumlah'      => 'required|numeric|min:1',
+            'jumlah'      => 'required|numeric|min:1', 
             'kondisi'     => 'required',
-            'foto'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'foto'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048', // Max 2MB
         ]);
 
         $data = $request->except('foto');
+        
+        // Isi fakultas otomatis jika kolom tersedia
+        if (Schema::hasColumn('barang', 'fakultas')) {
+            $data['fakultas'] = auth()->user()->fakultas;
+        }
 
+        // PROSES UPLOAD FOTO
         if ($request->hasFile('foto')) {
+            // Simpan file ke folder storage/app/public/fotos-barang
+            // Path yang disimpan ke DB akan seperti: fotos-barang/namafile.jpg
             $path = $request->file('foto')->store('fotos-barang', 'public');
             $data['foto'] = $path;
         }
 
         Barang::create($data);
-
         return redirect()->route('barang.index')->with('success', 'Aset berhasil ditambahkan.');
     }
 
+    /**
+     * Menampilkan form edit barang
+     */
     public function edit($id)
     {
         $barang = Barang::findOrFail($id);
-        return view('barang.edit', compact('barang'));
+        $lokasis = Lokasi::orderBy('nama_lokasi')->get();
+        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        return view('barang.edit', compact('barang', 'lokasis', 'kategoris'));
     }
 
     /**
-     * UPDATE DATA + GANTI FOTO
+     * Update data barang + Ganti foto jika ada upload baru
      */
     public function update(Request $request, $id)
     {
         $barang = Barang::findOrFail($id);
-
+        
         $request->validate([
             'kode_barang' => 'required|unique:barang,kode_barang,' . $id,
-            'nama_barang' => 'required',
-            'kategori'    => 'required',
-            'lokasi'      => 'required',
-            'jumlah'      => 'required|numeric|min:1',
-            'kondisi'     => 'required',
-            'foto'        => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
+            'nama_barang' => 'required', 'kategori' => 'required', 'lokasi' => 'required',
+            'jumlah' => 'required|numeric|min:1', 'kondisi' => 'required',
+            'foto' => 'nullable|image|mimes:jpg,png,jpeg|max:2048',
         ]);
 
         $data = $request->except('foto');
-
+        
+        // Jika ada upload foto baru, hapus yang lama dan simpan yang baru
         if ($request->hasFile('foto')) {
             if ($barang->foto && Storage::disk('public')->exists($barang->foto)) {
                 Storage::disk('public')->delete($barang->foto);
             }
-            $path = $request->file('foto')->store('fotos-barang', 'public');
-            $data['foto'] = $path;
+            $data['foto'] = $request->file('foto')->store('fotos-barang', 'public');
         }
 
         $barang->update($data);
-
         return redirect()->route('barang.index')->with('success', 'Data aset berhasil diperbarui.');
     }
 
     /**
-     * FITUR 6: SOFT DELETE (HAPUS SEMENTARA)
+     * Hapus sementara (Soft Delete / Arsip)
      */
     public function destroy($id)
     {
         $barang = Barang::findOrFail($id);
         $barang->delete(); 
-
         return redirect()->route('barang.index')->with('success', 'Aset dipindahkan ke arsip.');
     }
 
     /**
-     * FITUR 6: RESTORE DARI ARSIP
+     * Menampilkan data yang sudah diarsip (Trashed)
+     */
+    public function trashed()
+    {
+        $user = auth()->user();
+        $query = Barang::onlyTrashed();
+        
+        if (Schema::hasColumn('barang', 'fakultas')) {
+            $query->where('fakultas', $user->fakultas);
+        }
+
+        $barangs = $query->latest()->paginate(10);
+        return view('barang.trashed', compact('barangs'));
+    }
+
+    /**
+     * Mengembalikan data dari arsip (Restore)
      */
     public function restore($id)
     {
         $barang = Barang::withTrashed()->findOrFail($id);
+        
+        // Cek keamanan fakultas
+        if (Schema::hasColumn('barang', 'fakultas') && auth()->user()->fakultas !== $barang->fakultas && auth()->user()->role !== 'super_admin') {
+             abort(403);
+        }
+
         $barang->restore();
-        return redirect()->route('barang.trashed')->with('success', 'Aset berhasil dikembalikan dari arsip.');
+        return redirect()->route('barang.trashed')->with('success', 'Aset berhasil dikembalikan.');
     }
 
     /**
-     * Halaman Transfer & Riwayat Aset (AMAN TIDAK DIUBAH)
+     * Hapus Permanen (Force Delete) - Untuk memperbaiki error route di arsip
      */
-    public function riwayatTransfer()
+    public function forceDelete($id)
     {
-        return view('barang.riwayat_transfer');
+        $barang = Barang::withTrashed()->findOrFail($id);
+        
+        // Hapus file foto fisik dari server agar tidak menumpuk
+        if ($barang->foto && Storage::disk('public')->exists($barang->foto)) {
+            Storage::disk('public')->delete($barang->foto);
+        }
+        
+        $barang->forceDelete();
+        return back()->with('success', 'Aset dihapus permanen dari sistem.');
+    }
+
+    /**
+     * Export Excel (Placeholder)
+     */
+    public function exportExcel()
+    {
+        return back()->with('info', 'Fitur export sedang dalam pengembangan.');
     }
 }

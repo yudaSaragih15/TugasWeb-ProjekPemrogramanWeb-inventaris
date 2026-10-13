@@ -4,33 +4,36 @@
 @section('content')
 <div class="mb-4">
     <h3 class="fw-bold mb-1">Dashboard Inventaris</h3>
-    <p class="text-muted mb-0">Ringkasan data dan statistik inventaris aset kampus FMIPA UNIMED.</p>
+    <!-- Subtitle dinamis sesuai fakultas user -->
+    <p class="text-muted mb-0">Ringkasan data dan statistik inventaris aset kampus {{ auth()->user()->fakultas ?? 'UNIMED' }}.</p>
 </div>
 
 <!-- Kartu Statistik -->
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card card-custom border-0 shadow-sm p-3 rounded-3">
+    <div class="col-md-6 col-lg-6">
+        <div class="card card-custom border-0 shadow-sm p-3 rounded-3 h-100">
             <div class="d-flex align-items-center">
                 <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-3 me-3">
                     <i class="bi bi-box-seam fs-3"></i>
                 </div>
                 <div>
-                    <span class="text-muted small">Total Jenis Aset</span>
-                    <h3 class="fw-bold mb-0">{{ $totalBarang ?? $total_jenis ?? 0 }}</h3>
+                    <span class="text-muted small d-block">Total Jenis Aset</span>
+                    <!-- VARIABEL SUDAH DISINKRONKAN DENGAN CONTROLLER -->
+                    <h3 class="fw-bold mb-0">{{ $totalJenisAset ?? 0 }}</h3>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card card-custom border-0 shadow-sm p-3 rounded-3">
+    <div class="col-md-6 col-lg-6">
+        <div class="card card-custom border-0 shadow-sm p-3 rounded-3 h-100">
             <div class="d-flex align-items-center">
                 <div class="bg-success bg-opacity-10 text-success p-3 rounded-3 me-3">
                     <i class="bi bi-layers fs-3"></i>
                 </div>
                 <div>
-                    <span class="text-muted small">Total Unit Barang</span>
-                    <h3 class="fw-bold mb-0">{{ $totalJumlah ?? $total_aset ?? 0 }}</h3>
+                    <span class="text-muted small d-block">Total Unit Barang</span>
+                    <!-- VARIABEL SUDAH DISINKRONKAN DENGAN CONTROLLER -->
+                    <h3 class="fw-bold mb-0">{{ $totalUnitBarang ?? 0 }}</h3>
                 </div>
             </div>
         </div>
@@ -39,8 +42,8 @@
 
 <!-- Baris untuk Grafik Statistik -->
 <div class="row g-4 mb-4">
-    <div class="col-md-6">
-        <div class="card card-custom p-4 border-0 shadow-sm">
+    <div class="col-md-8 col-lg-6">
+        <div class="card card-custom p-4 border-0 shadow-sm h-100">
             <h5 class="fw-bold mb-3">Statistik Kondisi Aset</h5>
             <div style="position: relative; height: 280px; width: 100%;">
                 <canvas id="kondisiChart"></canvas>
@@ -53,14 +56,14 @@
 <div class="card card-custom border-0 shadow-sm p-4 rounded-3">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5 class="fw-bold mb-0">Aset Terbaru Ditambahkan</h5>
-        <a href="{{ route('barang.index') }}" class="btn btn-sm btn-outline-primary">Lihat Semua Data Aset</a>
+        <a href="{{ route('barang.index') }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">Lihat Semua Data Aset</a>
     </div>
 
     <div class="table-responsive">
-        <table class="table align-middle">
-            <thead>
+        <table class="table align-middle mb-0">
+            <thead class="bg-light">
                 <tr class="text-muted">
-                    <th>Kode</th>
+                    <th class="ps-3">Kode</th>
                     <th>Nama Barang</th>
                     <th>Kategori</th>
                     <th>Lokasi</th>
@@ -68,18 +71,20 @@
                 </tr>
             </thead>
             <tbody>
-                @forelse($barangTerbaru ?? $barang_terbaru ?? [] as $barang)
+                <!-- VARIABEL SUDAH DISINKRONKAN MENJADI $asetTerbaru -->
+                @forelse($asetTerbaru ?? [] as $barang)
                     <tr>
-                        <td><code>{{ $barang->kode_barang }}</code></td>
+                        <td class="ps-3"><code>{{ $barang->kode_barang }}</code></td>
                         <td class="fw-semibold">{{ $barang->nama_barang }}</td>
-                        <td>{{ $barang->kategori }}</td>
+                        <td><span class="badge bg-secondary bg-opacity-10 text-dark border">{{ $barang->kategori }}</span></td>
                         <td>{{ $barang->lokasi }}</td>
-                        <td>{{ $barang->jumlah }}</td>
+                        <td>{{ $barang->jumlah }} Unit</td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="5" class="text-center py-4 text-muted">
-                            Belum ada aset terdaftar.
+                            <i class="bi bi-inbox fs-4 d-block mb-2"></i>
+                            Belum ada aset terdaftar di fakultas Anda.
                         </td>
                     </tr>
                 @endforelse
@@ -98,12 +103,13 @@
         if (canvasElement) {
             const ctx = canvasElement.getContext('2d');
             
-            // Mengambil variabel dari controller, jika kosong jadikan 0
-            const dataBaik = {{ $kondisiBaik ?? 0 }};
-            const dataRingan = {{ $kondisiRingan ?? 0 }};
-            const dataBerat = {{ $kondisiBerat ?? 0 }};
-
-            console.log("Data Tes Grafik:", dataBaik, dataRingan, dataBerat);
+            // MENGAMBIL DATA DARI ARRAY $kondisiStats YANG DIKIRIM CONTROLLER
+            // Ini memperbaiki masalah grafik kosong sebelumnya
+            const stats = @json($kondisiStats ?? ['Baik' => 0, 'Rusak Ringan' => 0, 'Rusak Berat' => 0]);
+            
+            const dataBaik = stats['Baik'] || 0;
+            const dataRingan = stats['Rusak Ringan'] || 0;
+            const dataBerat = stats['Rusak Berat'] || 0;
 
             new Chart(ctx, {
                 type: 'doughnut',
@@ -113,21 +119,25 @@
                         label: 'Jumlah Aset',
                         data: [dataBaik, dataRingan, dataBerat],
                         backgroundColor: [
-                            '#0d6efd', // Biru
-                            '#ffc107', // Kuning
-                            '#dc3545'  // Merah
+                            '#0d6efd', // Biru (Baik)
+                            '#ffc107', // Kuning (Rusak Ringan)
+                            '#dc3545'  // Merah (Rusak Berat)
                         ],
-                        borderWidth: 1
+                        borderWidth: 0,
+                        hoverOffset: 4
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    cutout: '70%', // Membuat donut lebih tipis & modern
                     plugins: {
                         legend: {
                             position: 'bottom',
                             labels: {
-                                color: '#e0e0e0' // Warna teks legend
+                                usePointStyle: true,
+                                padding: 20,
+                                font: { family: "'Plus Jakarta Sans', sans-serif" }
                             }
                         }
                     }

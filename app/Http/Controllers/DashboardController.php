@@ -3,40 +3,46 @@
 namespace App\Http\Controllers;
 
 use App\Models\Barang;
-use App\Models\RiwayatTransfer;
+use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-   public function index()
+    public function index()
     {
-        // Statistik utama
-        $totalBarang = Barang::count();
-        $totalJumlah = Barang::sum('jumlah');
-        
-        $barangTerbaru = Barang::latest()->take(5)->get();
-        $riwayat_terbaru = RiwayatTransfer::with('barang')->latest()->take(5)->get();
+        $user = auth()->user();
+        $isSuperAdmin = ($user->role === 'super_admin');
 
-        // Data Grafik Berdasarkan Kondisi
-        $kondisiBaik = Barang::where('kondisi', 'LIKE', '%baik%')
-                             ->orWhere('kondisi', 'LIKE', '%Baik%')
-                             ->sum('jumlah');
-                             
-        $kondisiRingan = Barang::where('kondisi', 'LIKE', '%rusak ringan%')
-                               ->orWhere('kondisi', 'LIKE', '%Rusak Ringan%')
-                               ->sum('jumlah');
-                               
-        $kondisiBerat = Barang::where('kondisi', 'LIKE', '%rusak berat%')
-                              ->orWhere('kondisi', 'LIKE', '%Rusak Berat%')
-                              ->sum('jumlah');
+        // 1. TENTUKAN BASE QUERY BERDASARKAN ROLE
+        if ($isSuperAdmin) {
+            // Super Admin melihat SEMUA data (Tanpa filter fakultas)
+            $baseQuery = Barang::query();
+            $subtitle = "Ringkasan data inventaris aset seluruh kampus UNIMED.";
+        } else {
+            // Admin Fakultas hanya melihat data fakultasnya sendiri
+            $baseQuery = Barang::where('fakultas', $user->fakultas);
+            $subtitle = "Ringkasan data inventaris aset kampus " . $user->fakultas . ".";
+        }
+
+        // 2. HITUNG STATISTIK MENGGUNAKAN BASE QUERY
+        $totalJenisAset = (clone $baseQuery)->count();
+        $totalUnitBarang = (clone $baseQuery)->sum('jumlah') ?? 0;
+
+        // 3. DATA GRAFIK KONDISI
+        $kondisiStats = [
+            'Baik'          => (clone $baseQuery)->where('kondisi', 'Baik')->count(),
+            'Rusak Ringan'  => (clone $baseQuery)->where('kondisi', 'Rusak Ringan')->count(),
+            'Rusak Berat'   => (clone $baseQuery)->where('kondisi', 'Rusak Berat')->count(),
+        ];
+
+        // 4. ASET TERBARU (5 Terakhir)
+        $asetTerbaru = (clone $baseQuery)->latest()->take(5)->get();
 
         return view('dashboard', compact(
-            'totalBarang', 
-            'totalJumlah',
-            'barangTerbaru',
-            'riwayat_terbaru',
-            'kondisiBaik',
-            'kondisiRingan',
-            'kondisiBerat'
+            'totalJenisAset', 
+            'totalUnitBarang', 
+            'kondisiStats', 
+            'asetTerbaru',
+            'subtitle' // Kirim subtitle dinamis ke view
         ));
     }
 }

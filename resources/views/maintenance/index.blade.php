@@ -3,70 +3,95 @@
 @section('title', 'Pemeliharaan & Servis')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h3 class="fw-bold mb-1">Pemeliharaan & Servis</h3>
-        <p class="text-muted mb-0">Catat perbaikan, ganti sparepart, dan pantau status aset rusak secara real-time.</p>
-    </div>
-</div>
-
-<div class="row g-4">
-    <!-- KOLOM KIRI: FORM INPUT SERVIS BARU -->
-    <div class="col-lg-4">
-        <div class="card card-custom p-4 h-100">
-            <h5 class="fw-bold mb-3 text-warning">
-                <i class="bi bi-wrench-adjustable-circle me-2"></i>Catat Servis Baru
-            </h5>
+<div class="row">
+    <!-- FORM INPUT PEMELIHARAAN -->
+    <div class="col-lg-4 mb-4">
+        <div class="card card-custom p-4 border-0 shadow-sm h-100">
+            <h5 class="fw-bold mb-4 text-warning"><i class="bi bi-tools me-2"></i>Catat Servis Baru</h5>
             
             <form action="{{ route('maintenance.store') }}" method="POST">
                 @csrf
                 
+                <!-- Pilih Aset -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-uppercase text-muted">Pilih Aset / Barang</label>
-                    <select name="barang_id" class="form-select rounded-3" required>
-                        <option value="" disabled selected>-- Pilih Barang --</option>
+                    <select name="barang_id" class="form-select @error('barang_id') is-invalid @enderror" required>
+                        <option value="">-- Pilih Barang --</option>
                         @foreach($barangs as $b)
-                            <option value="{{ $b->id }}">{{ $b->kode_barang }} - {{ $b->nama_barang }}</option>
+                            <option value="{{ $b->id }}" {{ old('barang_id') == $b->id ? 'selected' : '' }}>
+                                {{ $b->kode_barang }} - {{ $b->nama_barang }}
+                            </option>
                         @endforeach
                     </select>
+                    @error('barang_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+                <!-- Tanggal Servis -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-uppercase text-muted">Tanggal Servis</label>
-                    <input type="date" name="tanggal_servis" class="form-control rounded-3" value="{{ date('Y-m-d') }}" required>
+                    <input type="date" name="tanggal_servis" class="form-control @error('tanggal_servis') is-invalid @enderror" 
+                           value="{{ old('tanggal_servis', date('Y-m-d')) }}" required>
+                    @error('tanggal_servis') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+                <!-- Jenis Layanan (VALUE HARUS PERSIS DENGAN DATABASE) -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-uppercase text-muted">Jenis Layanan</label>
-                    <select name="jenis_layanan" class="form-select rounded-3" required>
-                        <option value="Perbaikan Umum">Perbaikan Umum</option>
-                        <option value="Ganti Sparepart">Ganti Sparepart</option>
-                        <option value="Pembersihan">Pembersihan / Cleaning</option>
-                        <option value="Kalibrasi">Kalibrasi Alat</option>
-                        <option value="Instalasi Ulang">Instalasi Ulang Software</option>
+                    <select name="jenis_layanan" class="form-select @error('jenis_layanan') is-invalid @enderror" required>
+                        <option value="">-- Pilih Jenis --</option>
+                        <!-- Pastikan value ini SAMA PERSIS dengan opsi ENUM di database -->
+                        <option value="Perbaikan Umum" {{ old('jenis_layanan') == 'Perbaikan Umum' ? 'selected' : '' }}>Perbaikan Umum</option>
+                        <option value="Ganti Sparepart" {{ old('jenis_layanan') == 'Ganti Sparepart' ? 'selected' : '' }}>Ganti Sparepart</option>
+                        <option value="Servis Berkala" {{ old('jenis_layanan') == 'Servis Berkala' ? 'selected' : '' }}>Servis Berkala</option>
+                        <option value="Lainnya" {{ old('jenis_layanan') == 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
                     </select>
+                    @error('jenis_layanan') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+                <!-- Deskripsi Kerusakan -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-uppercase text-muted">Deskripsi Kerusakan</label>
-                    <textarea name="deskripsi_kerusakan" class="form-control rounded-3" rows="3" placeholder="Jelaskan detail kerusakan..." required></textarea>
+                    <textarea name="deskripsi_kerusakan" class="form-control @error('deskripsi_kerusakan') is-invalid @enderror" 
+                              rows="3" placeholder="Jelaskan detail kerusakan..." required>{{ old('deskripsi_kerusakan') }}</textarea>
+                    @error('deskripsi_kerusakan') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
+                <!-- Tindakan Perbaikan (Opsional) -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-uppercase text-muted">Tindakan Perbaikan (Opsional)</label>
+                    <textarea name="tindakan_perbaikan" class="form-control" rows="2" placeholder="Apa yang dilakukan?">{{ old('tindakan_perbaikan') }}</textarea>
+                </div>
+
+                <!-- Biaya Estimasi -->
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-uppercase text-muted">Biaya Estimasi (Rp)</label>
-                    <input type="number" name="biaya" class="form-control rounded-3" value="0" min="0" required>
+                    <input type="number" name="biaya" class="form-control @error('biaya') is-invalid @enderror" 
+                           value="{{ old('biaya', 0) }}" min="0" required>
+                    @error('biaya') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
 
-                <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-3 mt-2">
+                <!-- Status (VALUE HARUS PERSIS DENGAN DATABASE) -->
+                <div class="mb-4">
+                    <label class="form-label fw-semibold small text-uppercase text-muted">Status</label>
+                    <select name="status" class="form-select @error('status') is-invalid @enderror" required>
+                        <!-- Pastikan value ini SAMA PERSIS dengan opsi ENUM di database -->
+                        <option value="Dalam Proses" {{ old('status', 'Dalam Proses') == 'Dalam Proses' ? 'selected' : '' }}>Dalam Proses</option>
+                        <option value="Selesai" {{ old('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                        <option value="Menunggu Sparepart" {{ old('status') == 'Menunggu Sparepart' ? 'selected' : '' }}>Menunggu Sparepart</option>
+                    </select>
+                    @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+
+                <button type="submit" class="btn btn-warning w-100 fw-bold py-2 rounded-3">
                     <i class="bi bi-save me-1"></i> Simpan Catatan Servis
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- KOLOM KANAN: TABEL RIWAYAT PEMELIHARAAN -->
+    <!-- TABEL RIWAYAT PEMELIHARAAN -->
     <div class="col-lg-8">
-        <div class="card card-custom p-0 overflow-hidden">
+        <div class="card card-custom p-0 border-0 shadow-sm overflow-hidden">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
@@ -80,39 +105,29 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($records as $rec)
+                        @forelse($records as $record)
                         <tr>
                             <td class="ps-4">
-                                <div class="fw-semibold text-dark">{{ $rec->barang->nama_barang ?? 'N/A' }}</div>
-                                <small class="text-muted">{{ $rec->barang->kode_barang ?? '-' }}</small>
+                                <div class="fw-bold">{{ $record->barang->nama_barang ?? 'N/A' }}</div>
+                                <small class="text-muted">{{ $record->barang->kode_barang ?? '-' }}</small>
                             </td>
-                            <td>{{ \Carbon\Carbon::parse($rec->tanggal_servis)->format('d M Y') }}</td>
-                            <td><span class="badge bg-secondary bg-opacity-10 text-dark border border-secondary rounded-pill px-3">{{ $rec->jenis_layanan }}</span></td>
-                            <td class="fw-bold text-dark">Rp {{ number_format($rec->biaya, 0, ',', '.') }}</td>
-                            
-                            <!-- KOLOM STATUS DENGAN AUTO-SUBMIT -->
+                            <td>{{ \Carbon\Carbon::parse($record->tanggal_servis)->format('d M Y') }}</td>
+                            <td>{{ $record->jenis_layanan }}</td>
+                            <td>Rp {{ number_format($record->biaya, 0, ',', '.') }}</td>
                             <td>
-                                <form action="{{ route('maintenance.update-status', $rec->id) }}" method="POST" class="d-inline">
-                                    @csrf 
-                                    @method('PATCH')
-                                    <select name="status" class="form-select form-select-sm border-0 bg-transparent fw-semibold p-0" 
-                                            style="width: auto; cursor: pointer; 
-                                                   color: {{ $rec->status == 'Selesai' ? '#198754' : ($rec->status == 'Dalam Proses' ? '#fd7e14' : '#dc3545') }};"
-                                            onchange="this.form.submit()">
-                                        <option value="Dalam Proses" {{ $rec->status == 'Dalam Proses' ? 'selected' : '' }}>🟠 Dalam Proses</option>
-                                        <option value="Menunggu Sparepart" {{ $rec->status == 'Menunggu Sparepart' ? 'selected' : '' }}> Tunggu Part</option>
-                                        <option value="Selesai" {{ $rec->status == 'Selesai' ? 'selected' : '' }}>✅ Selesai</option>
-                                    </select>
-                                </form>
+                                @if($record->status == 'Selesai')
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-3">Selesai</span>
+                                @elseif($record->status == 'Dalam Proses')
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning rounded-pill px-3">Dalam Proses</span>
+                                @else
+                                    <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-3">Menunggu Sparepart</span>
+                                @endif
                             </td>
-
                             <td class="text-end pe-4">
-                                <form action="{{ route('maintenance.destroy', $rec->id) }}" method="POST" onsubmit="return confirm('Yakin ingin menghapus catatan servis ini?')">
-                                    @csrf 
+                                <form action="{{ route('maintenance.destroy', $record->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus catatan ini?')">
+                                    @csrf
                                     @method('DELETE')
-                                    <button class="btn btn-sm btn-outline-danger rounded-pill px-3" title="Hapus">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" title="Hapus"><i class="bi bi-trash"></i></button>
                                 </form>
                             </td>
                         </tr>
@@ -128,7 +143,6 @@
                 </table>
             </div>
             
-            <!-- PAGINATION -->
             @if($records->hasPages())
             <div class="p-3 border-top bg-white">
                 {{ $records->links() }}

@@ -5,66 +5,82 @@ namespace App\Http\Controllers;
 use App\Models\Pemeliharaan;
 use App\Models\Barang;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log; // Tambahkan ini untuk debug
 
 class MaintenanceController extends Controller
 {
-    /**
-     * Menampilkan Halaman Index Pemeliharaan
-     */
     public function index()
     {
-        // Mengambil data pemeliharaan terbaru beserta relasi barangnya
-        $records = Pemeliharaan::with('barang')->latest()->paginate(10);
+        $user = auth()->user();
+        $query = Pemeliharaan::with('barang');
+
+        if (Schema::hasColumn('pemeliharaans', 'fakultas')) {
+            $query->where('fakultas', $user->fakultas);
+        }
+
+        $records = $query->latest()->paginate(10);
         
-        // Mengambil semua barang untuk dropdown form input
-        $barangs = Barang::orderBy('nama_barang')->get();
+        $barangQuery = Barang::query();
+        if (Schema::hasColumn('barang', 'fakultas')) {
+            $barangQuery->where('fakultas', $user->fakultas);
+        }
+        $barangs = $barangQuery->orderBy('nama_barang')->get();
 
         return view('maintenance.index', compact('records', 'barangs'));
     }
 
-    /**
-     * Menyimpan Data Pemeliharaan Baru
-     */
     public function store(Request $request)
     {
-        $request->validate([
+        // Debug: Lihat data apa yang masuk (Hapus baris ini setelah berhasil)
+        // dd($request->all()); 
+
+        $validated = $request->validate([
             'barang_id'           => 'required|exists:barang,id',
             'tanggal_servis'      => 'required|date',
             'jenis_layanan'       => 'required|string',
             'deskripsi_kerusakan' => 'required|string',
             'tindakan_perbaikan'  => 'nullable|string',
             'biaya'               => 'required|numeric|min:0',
-            'status'              => 'required|in:Selesai,Dalam Proses,Menunggu Sparepart',
+            // Hapus validasi status jika tidak ada input status di form HTML
+            // 'status'              => 'required|in:Selesai,Dalam Proses,Menunggu Sparepart',
         ]);
 
-        Pemeliharaan::create($request->all());
+        try {
+            $data = $validated;
+            
+            // Set default status jika tidak ada di form
+            $data['status'] = $request->input('status', 'Dalam Proses');
+            
+            // Isi default tindakan perbaikan
+            if (empty($data['tindakan_perbaikan'])) {
+                $data['tindakan_perbaikan'] = $data['deskripsi_kerusakan'];
+            }
 
-        return redirect()->route('maintenance.index')->with('success', 'Catatan servis berhasil disimpan.');
+            // Simpan fakultas jika kolom tersedia
+            if (Schema::hasColumn('pemeliharaans', 'fakultas')) {
+                $data['fakultas'] = auth()->user()->fakultas;
+            }
+
+            Pemeliharaan::create($data);
+            
+            return back()->with('success', 'Catatan servis berhasil disimpan!');
+            
+        } catch (\Exception $e) {
+            Log::error('Gagal simpan maintenance: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal menyimpan: ' . $e->getMessage());
+        }
     }
 
-    /**
-     * Update Status Pemeliharaan (Quick Action)
-     */
-    public function updateStatus(Request $request, $id)
-    {
-        $request->validate([
-            'status' => 'required|in:Selesai,Dalam Proses,Menunggu Sparepart'
-        ]);
-
+    // Method updateStatus dan destroy tetap sama seperti sebelumnya
+    public function updateStatus(Request $request, $id) {
         $record = Pemeliharaan::findOrFail($id);
         $record->update(['status' => $request->status]);
-
-        return back()->with('success', 'Status pemeliharaan diperbarui menjadi ' . $request->status);
+        return back()->with('success', 'Status diperbarui.');
     }
 
-    /**
-     * Hapus Data Pemeliharaan
-     */
-    public function destroy($id)
-    {
-        $record = Pemeliharaan::findOrFail($id);
-        $record->delete();
-
-        return back()->with('success', 'Data pemeliharaan berhasil dihapus.');
+    public function destroy($id) {
+        Pemeliharaan::findOrFail($id)->delete();
+        return back()->with('success', 'Data dihapus.');
     }
 }

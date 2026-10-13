@@ -4,20 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class RiwayatTransfer extends Model
 {
     use HasFactory;
 
     /**
-     * Nama tabel riwayat mutasi di database MySQL.
+     * Nama tabel di database (sesuaikan jika berbeda)
      */
     protected $table = 'riwayat_transfers';
 
     /**
-     * Kolom fillable sesuai migration Yuda:
-     * barang_id, lokasi_asal, lokasi_tujuan, jumlah, keterangan, tanggal.
+     * Atribut yang boleh diisi secara massal
+     * PENTING: 'fakultas' harus ada di sini agar bisa disimpan oleh controller
      */
     protected $fillable = [
         'barang_id',
@@ -26,37 +25,23 @@ class RiwayatTransfer extends Model
         'jumlah',
         'keterangan',
         'tanggal',
+        'fakultas', 
+        'user_id',
     ];
 
     /**
-     * Casting tipe data kolom.
+     * Relasi ke tabel Barang
      */
-    protected $casts = [
-        'jumlah' => 'integer',
-        'tanggal' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
-    ];
-
-    /**
-     * Accessor Defensif:
-     * Mengizinkan pemanggilan $item->tanggal_transfer maupun $item->tanggal
-     * di view tanpa memicu error Undefined Property.
-     */
-    public function getTanggalTransferAttribute()
+    public function barang()
     {
-        return $this->attributes['tanggal'] 
-            ?? $this->attributes['tanggal_transfer'] 
-            ?? $this->created_at;
+        return $this->belongsTo(Barang::class, 'barang_id');
     }
 
     /**
-     * Relasi Many-to-One ke model Barang.
-     * ->withTrashed() disematkan agar catatan audit trail tetap menampilkan
-     * nama aset fisik meskipun barang master sempat diarsipkan.
+     * Relasi ke User (Admin yang melakukan transfer)
      */
-    public function barang(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(Barang::class, 'barang_id')->withTrashed();
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

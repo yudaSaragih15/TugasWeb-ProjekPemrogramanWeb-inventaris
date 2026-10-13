@@ -1,5 +1,7 @@
 @extends('layouts.app')
 
+@section('title', 'Daftar Inventaris Aset')
+
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -7,7 +9,7 @@
         <p class="text-muted mb-0">Kelola dan pantau seluruh aset kampus yang terdaftar.</p>
     </div>
     
-    <!-- FITUR DROPDOWN MENU (Pengganti Tombol Biasa) -->
+    <!-- MENU AKSI DROPDOWN -->
     <div class="dropdown">
         <button class="btn btn-dark dropdown-toggle px-4 py-2 rounded-3 fw-bold d-flex align-items-center gap-2" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
             <i class="bi bi-list-ul"></i> Menu Aksi
@@ -24,12 +26,11 @@
                     <i class="bi bi-file-earmark-excel-fill text-success"></i> Export ke Excel
                 </a>
             </li>
-            <!-- Bisa ditambah menu lain nanti, misal: Export PDF -->
         </ul>
     </div>
 </div>
 
-<!-- FITUR 1: SEARCH & FILTER BAR -->
+<!-- SEARCH & FILTER BAR -->
 <div class="card card-custom p-3 mb-4 border-0 shadow-sm">
     <form action="{{ route('barang.index') }}" method="GET" class="row g-3 align-items-end">
         <div class="col-md-4">
@@ -64,6 +65,7 @@
     </form>
 </div>
 
+<!-- TABEL DATA ASET -->
 <div class="card card-custom p-0 border-0 shadow-sm overflow-hidden">
     <div class="table-responsive">
         <table class="table table-hover align-middle mb-0">
@@ -85,18 +87,18 @@
                 <tr>
                     <td class="ps-4 text-muted">{{ $barangs->firstItem() + $index }}</td>
                     
-                    <!-- FITUR PREVIEW FOTO (MODAL) -->
+                    <!-- KOLOM FOTO (DIPERBAIKI DENGAN CEK FISIK FILE) -->
                     <td>
-                        @if($barang->foto)
-                            <!-- Gambar Kecil yang bisa diklik -->
-                            <img src="{{ asset('storage/' . $barang->foto) }}" 
-                                 alt="Preview" 
-                                 class="rounded shadow-sm" 
-                                 style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
-                                 data-bs-toggle="modal" 
-                                 data-bs-target="#fotoModal{{ $barang->id }}">
+                        @if($barang->foto && Storage::disk('public')->exists($barang->foto))
+                            <a href="{{ Storage::url($barang->foto) }}" target="_blank" title="Lihat Foto">
+                                <img src="{{ Storage::url($barang->foto) }}" 
+                                     alt="{{ $barang->nama_barang }}" 
+                                     class="rounded shadow-sm" 
+                                     style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;">
+                            </a>
                         @else
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" style="width: 50px; height: 50px;">
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center text-muted" 
+                                 style="width: 50px; height: 50px;" title="Foto tidak tersedia">
                                 <i class="bi bi-image fs-5"></i>
                             </div>
                         @endif
@@ -107,7 +109,6 @@
                     <td><span class="badge bg-secondary bg-opacity-10 text-dark border border-secondary rounded-pill px-3">{{ $barang->kategori }}</span></td>
                     <td><span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-3"><i class="bi bi-geo-alt me-1"></i>{{ $barang->lokasi }}</span></td>
                     
-                    <!-- INDIKATOR STOK RENDAH -->
                     <td>
                         <span class="fw-bold {{ $barang->jumlah < 5 ? 'text-danger' : 'text-dark' }}">
                             {{ $barang->jumlah }} Unit
@@ -142,8 +143,8 @@
                     </td>
                 </tr>
 
-                <!-- MODAL PREVIEW FOTO (Dibuat dinamis per baris) -->
-                @if($barang->foto)
+                <!-- MODAL PREVIEW FOTO -->
+                @if($barang->foto && Storage::disk('public')->exists($barang->foto))
                 <div class="modal fade" id="fotoModal{{ $barang->id }}" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered modal-lg">
                         <div class="modal-content border-0">
@@ -152,7 +153,7 @@
                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                             </div>
                             <div class="modal-body text-center p-4 bg-light">
-                                <img src="{{ asset('storage/' . $barang->foto) }}" class="img-fluid rounded shadow" style="max-height: 70vh;">
+                                <img src="{{ Storage::url($barang->foto) }}" class="img-fluid rounded shadow" style="max-height: 70vh;">
                             </div>
                         </div>
                     </div>
@@ -181,7 +182,7 @@
     </div>
 </div>
 
-<!-- TOMBOL LIHAT ARSIP (Soft Delete) -->
+<!-- TOMBOL LIHAT ARSIP -->
 <div class="mt-4 text-end">
     <a href="{{ route('barang.trashed') }}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
         <i class="bi bi-archive me-1"></i> Lihat Data Arsip
